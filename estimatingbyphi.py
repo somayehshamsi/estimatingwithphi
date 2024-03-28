@@ -81,7 +81,7 @@ total_tree_size: int = 0
 total_more: int = 0 
 
 # Path to the text file to read variables and their dual gains
-file_path = '/Users/ssha0224/Desktop/dualgains/trento1output.txt'
+file_path = './trento1output.txt'
 
 # Function to read variables and their gains 
 def read_variables_and_gains(file_path: str): #-> Tuple[List[str], Dict[str, float], Dict[str, float]]:
@@ -186,6 +186,8 @@ def equation(x, r, l):
         return None  # Return None if the result is out of range
 
 def find_x(r, l, tolerance=1e-6, max_iterations=10000):
+    if l > r:
+        l, r = r, l
     if l < 0.00001 or r < 0.00001:
         return None
     # x_low = 2**(1/r)
@@ -222,8 +224,23 @@ def find_x(r, l, tolerance=1e-6, max_iterations=10000):
 
 
 
-def expected_tree_size_phi (phi, param, zero_prob, sb_count: int) -> float:
-        
+def expected_tree_size_phi (phi:float, param:float, zero_prob, sb_count: int) -> float:
+        """
+        Estimates the size of two trees:
+            - The tree that uses the current best variable.
+            - The tree that uses the best variable given one additional strong branching iteration.
+        To estimate both of these tree sizes, we use phi^gap.
+        We suppose that the phi of the next variable follows a distribution that is mixed:
+            - With probability zero_prob it is very large.
+            - With probability (1-zero_prob) it is reasonable.
+
+        @param phi: the growth rate of the tree.
+        @param param: the parameter of the Pareto distribution.
+        @param zero_prob: the probability of a dual gain close to 0, and therefore of a phi to be too large.
+                          this informs 
+        @param sb_count: the number of strong branching iterations so far.
+        @return the estimates of the current and expected tree sizes.
+        """
 
         if 0.1 * phi >=1:
             min_m = 0.8 * phi
@@ -231,23 +248,26 @@ def expected_tree_size_phi (phi, param, zero_prob, sb_count: int) -> float:
         else:
             min_m = 1
 
+        current_treesize_no_SB = phi ** gap
+        current_treesize_with_SB = current_treesize_no_SB + 2 * sb_count 
 
-        current_treesize1 = phi ** gap
-        current_treesize = phi ** gap + 2 * sb_count 
+        # we use the integral for phi=1 to the current phi to compute the average estimated treesize
+        # with a new variable using a pareto distribution with parameter param.
+        # this gives us the treesize if phi is reasonable.
+        next_treesize_no_SB =  ((((param * ((min_m) ** param))/ (gap - param)) * (phi ** (gap - param))) - (((param * ((min_m) ** param))/ (gap - param)) * (min_m ** (gap- param)) )) 
 
-        next_treesize1 =  ((((param * ((min_m) ** param))/ (gap - param)) * (phi ** (gap - param))) - (((param * ((min_m) ** param))/ (gap - param)) * (min_m ** (gap- param)) )) 
-
-
+        # the probability that next_treesize_no_SB is smaller than current_treesize_no_SB
+        # if phi is reasonable.
         cdf = 1 - (1 / phi) ** param
 
-        next_treesize = zero_prob * (current_treesize1) + (1- zero_prob) * (cdf * next_treesize1 + (1 - cdf) * current_treesize1) + 2 * (sb_count + 1)
-
-
+        next_treesize_with_SB = zero_prob * (current_treesize_no_SB)\
+             + (1- zero_prob) * (cdf * next_treesize_no_SB + (1 - cdf) * current_treesize_no_SB)\
+                 + 2 * (sb_count + 1)
 
         # If max_variable_gain exceeds or equals the proposed gap, 
         # no further improvement in tree size is expected.
-        
-        return current_treesize, next_treesize
+        return current_treesize_with_SB, next_treesize_with_SB
+
 # Function for strong branching
 def strong_branching(variables: List[str]) -> Tuple[int, float, int, str, float, float]:
     
