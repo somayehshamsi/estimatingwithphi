@@ -158,9 +158,6 @@ def read_variables_and_gains(file_path: str): #-> Tuple[List[str], Dict[str, flo
                         variables_goemean_gains[var_character] = math.sqrt ((upgain_number + 0.01) * (downgain_number + 0.01)) - 0.01
 
 
-        # print ("upgains:", variables_left_gains)
-        # print ("downgain:", variables_right_gains)
-        # print ("geomean:", variables_goemean_gains)
                         
                         
         # valid_variables = {var: gain for var, gain in variables_goemean_gains.items() if gain >= 0.0001}
@@ -171,10 +168,6 @@ def read_variables_and_gains(file_path: str): #-> Tuple[List[str], Dict[str, flo
         # percent_invalid_variables = (num_invalid_variables / len(variables_goemean_gains)) 
 
 
-        # print(f"Number of variables with geomean gain less than 0.01: {num_invalid_variables}")
-        # print(f"Percentage of such variables: {percent_invalid_variables}%")
-        # print(f"Mean of gains for valid variables: {mean_valid_gains}")
-        # print("all", len(variables_goemean_gains))
 
         return variables, variables_left_gains, variables_right_gains
 
@@ -406,7 +399,7 @@ def strong_branching(variables: List[str]) -> Tuple[int, float, int, str, float,
 
         current_treesize, next_treesize =  expected_tree_size_phi (min_phi, param, zero_prob, sb_count)
         # size = compute_treesize (random_variable_gains.right_gain, random_variable_gains.left_gain) 
-        # print("size", size)
+
 
 
         #assert upper_bound >= max_variable_gain, "The upper bound of variables is {} but we found a variable with gain {}".format(upper_bound, max_variable_gain)
